@@ -49,10 +49,10 @@ export const Experience = () => {
   useEffect(() => {
     if (cameraZoomed) {
       // 📸 Camera ZOOMATA - più vicina e alta
-      cameraControls.current.setLookAt(0, 2, 5, 0, 2, 0, true);
+      cameraControls.current.setLookAt(0, 2, 6, 0, 2, 0, true);
     } else {
       // 📸 Camera NORMALE - più distante e alta
-      cameraControls.current.setLookAt(0, 3, 4, 0, 2, 0, true);
+      cameraControls.current.setLookAt(0, 3, 8, 0, 2, 0, true);
     }
   }, [cameraZoomed]);
   
