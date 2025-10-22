@@ -43,7 +43,7 @@ export const Experience = () => {
 
   useEffect(() => {
     // 🎥 Camera iniziale - alzata per vedere meglio Nonno Andrea
-    cameraControls.current.setLookAt(0, 2, 5, 0, 2, 0);
+    cameraControls.current.setLookAt(0, 3, 8, 0, 2, 0);
   }, []);
 
   useEffect(() => {
