@@ -5,23 +5,90 @@ export const UI = ({ hidden, ...props }) => {
   const input = useRef();
   const { chat, loading, cameraZoomed, setCameraZoomed, message } = useChat();
   
-  // STATI PER ACCESSORI
-  const [showGlasses, setShowGlasses] = useState(true);
-  const [showMustache, setShowMustache] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recognition, setRecognition] = useState(null);
   
-  // MENU ANIMAZIONI
-  const [showAnimationsMenu, setShowAnimationsMenu] = useState(false);
-
   const sendMessage = () => {
     const text = input.current.value;
-    if (!loading && !message) {
+    if (!loading && !message && text.trim()) {
       chat(text);
       input.current.value = "";
     }
   };
-  
-  const playAnimation = (animationName) => {
-    window.dispatchEvent(new CustomEvent('playAnimation', { detail: animationName }));
+
+  // 🎤 Avvia/ferma registrazione vocale
+  const toggleRecording = () => {
+    if (isRecording) {
+      // Ferma registrazione
+      if (recognition) {
+        recognition.stop();
+      }
+      setIsRecording(false);
+    } else {
+      // Avvia registrazione
+      startVoiceRecognition();
+    }
+  };
+
+  const startVoiceRecognition = () => {
+    // Controlla supporto browser
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert("Il tuo browser non supporta il riconoscimento vocale. Usa Chrome, Edge o Safari.");
+      return;
+    }
+
+    const recognitionInstance = new SpeechRecognition();
+    
+    // Configurazione
+    recognitionInstance.lang = 'it-IT'; // Italiano di default
+    recognitionInstance.interimResults = false;
+    recognitionInstance.maxAlternatives = 1;
+    recognitionInstance.continuous = false;
+
+    // Quando inizia
+    recognitionInstance.onstart = () => {
+      setIsRecording(true);
+      console.log("🎤 Registrazione iniziata");
+    };
+
+    // Quando riceve risultati
+    recognitionInstance.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      console.log("🗣️ Trascritto:", transcript);
+      input.current.value = transcript;
+      setIsRecording(false);
+      
+      // Invia automaticamente dopo la trascrizione
+      setTimeout(() => {
+        if (!loading && !message) {
+          chat(transcript);
+          input.current.value = "";
+        }
+      }, 500);
+    };
+
+    // Quando finisce
+    recognitionInstance.onend = () => {
+      setIsRecording(false);
+      console.log("🎤 Registrazione terminata");
+    };
+
+    // Gestione errori
+    recognitionInstance.onerror = (event) => {
+      console.error("Errore riconoscimento vocale:", event.error);
+      setIsRecording(false);
+      
+      if (event.error === 'no-speech') {
+        alert("Non ho sentito nulla. Riprova!");
+      } else if (event.error === 'not-allowed') {
+        alert("Devi autorizzare il microfono per usare questa funzione.");
+      }
+    };
+
+    setRecognition(recognitionInstance);
+    recognitionInstance.start();
   };
   
   if (hidden) {
@@ -37,103 +104,6 @@ export const UI = ({ hidden, ...props }) => {
         </div>
         
         <div className="w-full flex flex-col items-end justify-center gap-4">
-          {/* MENU ANIMAZIONI */}
-          {showAnimationsMenu && (
-            <div className="pointer-events-auto backdrop-blur-md bg-white bg-opacity-90 p-4 rounded-lg shadow-lg">
-              <h3 className="font-bold mb-3 text-gray-800">Animazioni</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => playAnimation("Standing Idle")}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md text-sm"
-                >
-                  Fermo
-                </button>
-                <button
-                  onClick={() => playAnimation("Rumba Dancing")}
-                  className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md text-sm"
-                >
-                  Balla
-                </button>
-                <button
-                  onClick={() => playAnimation("Laughing")}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm"
-                >
-                  Ride
-                </button>
-                <button
-                  onClick={() => playAnimation("Crying")}
-                  className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-md text-sm"
-                >
-                  Piange
-                </button>
-                <button
-                  onClick={() => playAnimation("Angry")}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm"
-                >
-                  Arrabbiato
-                </button>
-                <button
-                  onClick={() => playAnimation("Talking_0")}
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm"
-                >
-                  Parla
-                </button>
-              </div>
-            </div>
-          )}
-          
-          {/* CONTROLLI ACCESSORI */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                setShowGlasses(!showGlasses);
-                window.dispatchEvent(new CustomEvent('toggleGlasses', { detail: !showGlasses }));
-              }}
-              className={`pointer-events-auto text-white p-4 rounded-md transition-all ${
-                showGlasses ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400 hover:bg-gray-500'
-              }`}
-              title={showGlasses ? "Nascondi occhiali" : "Mostra occhiali"}
-            >
-              <span className="text-2xl">🕶️</span>
-            </button>
-            <button
-              onClick={() => {
-                setShowMustache(!showMustache);
-                window.dispatchEvent(new CustomEvent('toggleMustache', { detail: !showMustache }));
-              }}
-              className={`pointer-events-auto text-white p-4 rounded-md transition-all ${
-                showMustache ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-400 hover:bg-gray-500'
-              }`}
-              title={showMustache ? "Nascondi baffi" : "Mostra baffi"}
-            >
-              <span className="text-2xl">👨</span>
-            </button>
-          </div>
-          
-          {/* BOTTONE MENU ANIMAZIONI */}
-          <button
-            onClick={() => setShowAnimationsMenu(!showAnimationsMenu)}
-            className={`pointer-events-auto text-white p-4 rounded-md transition-all ${
-              showAnimationsMenu ? 'bg-purple-600' : 'bg-blue-500 hover:bg-blue-600'
-            }`}
-            title="Mostra/Nascondi menu animazioni"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
-              />
-            </svg>
-          </button>
-          
           <button
             onClick={() => setCameraZoomed(!cameraZoomed)}
             className="pointer-events-auto bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-md"
@@ -196,10 +166,12 @@ export const UI = ({ hidden, ...props }) => {
             </svg>
           </button>
         </div>
+        
+        {/* 💬 INPUT AREA */}
         <div className="flex items-center gap-2 pointer-events-auto max-w-screen-sm w-full mx-auto">
           <input
             className="w-full placeholder:text-gray-800 placeholder:italic p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md"
-            placeholder="Scrivi un messaggio a Nonno Andrea..."
+            placeholder="Scrivi o parla con Nonno Andrea..."
             ref={input}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -207,6 +179,54 @@ export const UI = ({ hidden, ...props }) => {
               }
             }}
           />
+          
+          {/* 🎤 BOTTONE MICROFONO */}
+          <button
+            onClick={toggleRecording}
+            disabled={loading || message}
+            className={`p-4 px-6 font-semibold rounded-md transition-all ${
+              isRecording 
+                ? "bg-red-500 hover:bg-red-600 animate-pulse" 
+                : "bg-green-500 hover:bg-green-600"
+            } text-white ${
+              loading || message ? "cursor-not-allowed opacity-30" : ""
+            }`}
+            title={isRecording ? "Ferma registrazione" : "Registra vocale"}
+          >
+            {isRecording ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
+                />
+              </svg>
+            )}
+          </button>
+          
+          {/* ✉️ BOTTONE INVIO */}
           <button
             disabled={loading || message}
             onClick={sendMessage}
