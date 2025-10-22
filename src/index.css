@@ -1,0 +1,41 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --leva-sizes-rootWidth: 340px;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  
+  /* Sfondo personalizzato */
+  background-image: url('/images/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  
+  /* Fallback se l'immagine non carica */
+  background-color: #faaca8;
+}
+
+body.greenScreen {
+  background-color: #00ff00;
+  background-image: none;
+}
+
+/* Rendi il canvas trasparente per vedere lo sfondo */
+canvas {
+  background: transparent !important;
+}
